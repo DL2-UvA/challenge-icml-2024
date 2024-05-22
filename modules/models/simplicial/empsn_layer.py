@@ -22,7 +22,7 @@ class EMPSNLayer(torch.nn.Module):
         self.channels = channels
         self.max_rank = max_rank
         
-        # TODO Invariance dict
+        # TODO Invariance dict - this hasn't been implemented because we don't want to hardcode?
         # convolutions within the same rank
         self.convs_same_rank = torch.nn.ModuleDict(
             {
@@ -58,7 +58,7 @@ class EMPSNLayer(torch.nn.Module):
                         EConv(
                             in_channels=2*channels + n_inv[rank-1][rank], # from r-1-cell to r-cell
                             out_channels=channels,
-                            update_func=None,
+                            update_func="silu",  #changed this to siLu since the original code uses silu every time inbetween -jesse
                         ),
                         EConv(
                         in_channels=channels, 
