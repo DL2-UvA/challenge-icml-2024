@@ -6,28 +6,16 @@ Graph Neural Networks (GNNs) [13], namely their most common variant, Message Pas
 
 As stated in the original EMPSN [3] paper, many real-life problems have a natural symmetry to translations, rotations, and reflections (that is, to the Euclidean group E(n)), such as object recognition or predicting molecular properties. Many approaches have been proposed to ensure E(n) equivariance: Tensor field networks [14], SE(3) Transformers [4], E(n) Equivariant Graph Neural Networks [12] among others. These works are particularly useful for working with geometric graph data, such as molecular point clouds; they use the underlying geometry of the space in which the graph is positioned to ensure E(n) equivariance. In this case, however, the lack of higher-dimensional features remains a limiting factor for the reasons stated previously. EMPSNs [3] are a novel approach to learning on geometric graphs and point clouds that is equivariant to the euclidean group E(n) (rotations, translations, and reflections). The method combines geometric and topological graph approaches to leverage both benefits. Its main contributions related to our reproduction study are the following:
 
-1. A generalization of E(n) Equivariant Graph Neural Networks (EGNNs), which can learn
-features on simplicial complexes.
-2. Experiments showing that the use of higher-dimensional simplex learning improves perfor-
-mance compared to EGNNs and MPSNs without requiring more parameters and proving
-to be competitive with SOTA methods on the QM9 dataset [11], [10].
+1. A generalization of E(n) Equivariant Graph Neural Networks (EGNNs), which can learn features on simplicial complexes.
+2. Experiments showing that the use of higher-dimensional simplex learning improves performance compared to EGNNs and MPSNs without requiring more parameters and proving to be competitive with SOTA methods on the QM9 dataset [11], [10].
 
-Additionally, their results suggest that incorporating geometric information serves as an effective
-measure against over-smoothing.
+Additionally, their results suggest that incorporating geometric information serves as an effective measure against over-smoothing.
 
-In our work, we attempt to reproduce the results of the original EMPSN paper and extend the
-method, rewriting parts of the author’s code to use a common suite for learning on topological
-domains. The suite allows us to test how a different graph lifting procedure (an operation
-that obtains higher-order simplices from graph data) compares to the one used in the original
-paper.
+In our work, we attempt to reproduce the results of the original EMPSN paper and extend the method, rewriting parts of the author’s code to use a common suite for learning on topological domains. The suite allows us to test how a different graph lifting procedure (an operation that obtains higher-order simplices from graph data) compares to the one used in the original paper.
 
 ## 2 Theoretical background
 
-Message passing neural networks have seen an increased popularity since their introduction [5].
-In this blogpost, we will elaborate on how message passing networks are adapted to work with
-simplicial complexes, as proposed by [3]. We introduce the relevant definitions of message pass-
-ing, simplicial complexes, equivariant message passing networks and message passing simplicial
-networks.
+Message passing neural networks have seen an increased popularity since their introduction [5]. In this blogpost, we will elaborate on how message passing networks are adapted to work with simplicial complexes, as proposed by [3]. We introduce the relevant definitions of message passing, simplicial complexes, equivariant message passing networks and message passing simplicial networks.
 
 ### 2.1 Message passing
 
