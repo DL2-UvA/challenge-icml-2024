@@ -55,15 +55,7 @@ To do this, we *lift* the point cloud to a Vietoris-Rips complex based on a para
 
 In addition to lifting of the structure to a higher-order topological structure, we will also lift the features to embed each $r$-simplex with a certain feature vector. We experiment with three methods: 1) A sum projection of the lower boundary of the simplex; 2) a mean projection of the lower boundary simplices; and 3) a mean of the 0-simplex components composing all lower boundary simplices, as shown in the figure and as worked out in [3]. Additionally, we also used a lift to the Alpha Complex. The alpha complex is a subcomplex of the Čech complex under the condition that the radius of the Čech complex is chosen to be $\sqrt{\alpha}$, where $\alpha$ is the parameter defining the alpha complex. Identical to the simplicial complexes, Alpha complexes are constructed until the second order. The motivation for this upper limit is to contain computational demands of training EMPSN within reasonable bounds. The invariant information is included as abstract edge attribute information between a simplex boundary within a communication framework. The simplex boundary features are shown in the table below:
 
-| Simplex adjacency relation | 0 to 0                               | 0 to 1                               | 1 to 1                               | 1 to 2                                    |
-|-----------------------------|--------------------------------------|--------------------------------------|--------------------------------------|-------------------------------------------|
-| Feature 1                   | $\|x_{\mathbf{p}_i} - x_{\mathbf{p}_j}\|$ | $\|x_{\mathbf{p}_i} - x_{\mathbf{p}_j}\|$ | $\|x_{\mathbf{p}_i} - x_{\mathbf{a}}\|$ | $\|x_{\mathbf{p}_i} - x_{\mathbf{a}}\|$ |
-| Feature 2                   | 0                                    | 0                                    | $\|x_{\mathbf{p}_i} - x_{\mathbf{b}}\|$ | $\|x_{\mathbf{p}_i} - x_{\mathbf{b}}\| + \|x_{\mathbf{p}_i} - x_{\mathbf{a}}\|$ |
-| Feature 3                   | 0                                    | $\|x_{\mathbf{p}_i} - x_{\mathbf{p}_j}\|$ | $\|x_{\mathbf{a}} - x_{\mathbf{b}}\|$ | $V(S_2)$                                  |
-| Feature 4                   | -                                    | -                                    | $\|x_{\mathbf{p}_i} - x_{\mathbf{a}}\|$ | $\|x_{\mathbf{p}_i} - x_{\mathbf{a}}\|$ |
-| Feature 5                   | -                                    | -                                    | $\|x_{\mathbf{p}_i} - x_{\mathbf{b}}\|$ | $\angle \mathbf{p}_i + \angle \mathbf{p}_j$ |
-| Feature 6                   | -                                    | -                                    | $\angle \mathbf{p}_i$                 | $\angle \mathbf{a}$                       |
-
-Table 1: Metadata of E(n) invariant features of simplex adjacencies
+<img src="images/table-1.png" style="width=100%;">
 
 In this table, the same point variables are used as in the original paper. $V(S_2)$ denotes the volume of the second order simplex, corresponding to the Volume feature in section 3.2 of the original paper.  As can be seen, some values occur twice in a simplex adjacency relation. The second time the same value occurs is because the volume of a 1d simplex is identical to the distance between its points.
+
