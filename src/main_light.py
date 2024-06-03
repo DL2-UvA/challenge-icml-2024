@@ -3,29 +3,33 @@ import torch
 import wandb
 import copy
 from tqdm import tqdm
+import lightning as L
+from lightning.pytorch.loggers import WandbLogger
+
 
 from modules.models.simplicial.empsn import EMPSN
+from light_empsn import LitEMPSN
 
 from data_utils import generate_loaders_qm9, calc_mean_mad
 import time
 from utils import set_seed
 
+num_input = 15
+num_out = 1
+
+inv_dims = {
+    'rank_0': {
+        'rank_0': 3,
+        'rank_1': 3,
+    },
+    'rank_1': {
+        'rank_1': 6,
+        'rank_2': 6,
+    }
+}
 
 def main(args):
     # # Generate model
-    num_input = 15
-    num_out = 1
-
-    inv_dims = {
-        'rank_0': {
-            'rank_0': 3,
-            'rank_1': 3,
-        },
-        'rank_1': {
-            'rank_1': 6,
-            'rank_2': 6,
-        }
-    }
     model = EMPSN(
             in_channels=num_input,
             hidden_channels=args.num_hidden,
@@ -52,70 +56,14 @@ def main(args):
     mean, mad = calc_mean_mad(train_loader)
     mean, mad = mean.to(args.device), mad.to(args.device)
 
-
     print('Almost at training...')
-    # Get optimization objects
-    criterion = torch.nn.L1Loss(reduction='sum')
-    optimizer = torch.optim.Adam(model.parameters(), lr=args.lr, weight_decay=args.weight_decay)
-    scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(optimizer, args.epochs)
-    best_train_mae, best_val_mae, best_model = float('inf'), float('inf'), None
 
-    for _ in tqdm(range(args.epochs)):
-        epoch_mae_train, epoch_mae_val = 0, 0
+    wandb_logger = WandbLogger()
 
-        model.train()
-        for _, batch in enumerate(train_loader):
-            optimizer.zero_grad()
-
-            batch = batch.to(args.device)
-            pred = model(batch)
-            loss = criterion(pred, (batch.y - mean) / mad)
-            mae = criterion(pred * mad + mean, batch.y)
-            loss.backward()
-
-            torch.nn.utils.clip_grad_norm_(model.parameters(), args.gradient_clip)
-
-            optimizer.step()
-            epoch_mae_train += mae.item()
-
-        model.eval()
-        for _, batch in enumerate(val_loader):
-            batch = batch.to(args.device)
-            pred = model(batch)
-            mae = criterion(pred * mad + mean, batch.y)
-
-            epoch_mae_val += mae.item()
-
-        epoch_mae_train /= len(train_loader.dataset)
-        epoch_mae_val /= len(val_loader.dataset)
-
-        if epoch_mae_val < best_val_mae:
-            best_val_mae = epoch_mae_val
-            best_model = copy.deepcopy(model.state_dict())
-
-        scheduler.step()
-
-        wandb.log({
-            'Train MAE': epoch_mae_train,
-            'Validation MAE': epoch_mae_val
-        })
-
-    test_mae = 0
-    model.load_state_dict(best_model)
-    model.eval()
-    for _, batch in enumerate(test_loader):
-        batch = batch.to(args.device)
-        pred = model(batch)
-        mae = criterion(pred * mad + mean, batch.y)
-        test_mae += mae.item()
-
-    test_mae /= len(test_loader.dataset)
-    print(f'Test MAE: {test_mae}')
-
-    wandb.log({
-        'Test MAE': test_mae,
-    })
-
+    empsn = LitEMPSN(model, mae=mad, mad=mad, mean=mean, lr=args.lr, weight_decay=args.weight_decay)
+    trainer = L.Trainer(max_epochs=args.epochs, gradient_clip_val=args.gradient_clip, enable_checkpointing=False, accelerator=args.device, devices=1, logger=wandb_logger)# accelerator='gpu', devices=1)
+    trainer.fit(empsn, train_dataloaders=train_loader, val_dataloaders=val_loader)
+    trainer.test(empsn, dataloaders=test_loader)
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
@@ -166,7 +114,7 @@ if __name__ == "__main__":
 
 
     parsed_args = parser.parse_args()
-    parsed_args.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+    parsed_args.device = "cuda" if torch.cuda.is_available() else "cpu"
 
     set_seed(parsed_args.seed)
     main(parsed_args)
