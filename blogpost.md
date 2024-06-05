@@ -39,9 +39,11 @@ Message passing neural networks have seen an increased popularity since their in
 
 QM9 is a dataset of stable small organic molecules with geometric, energetic, and thermodynamic properties. It contains important quantum chemical properties and serves as a standard benchmark for machine learning methods or systems of identifications of the contained molecular properties. The QM9 dataset consists of molecular graphs with 19 graph-level features. The nodes of the molecular graphs are atoms embedded in a three-dimensional Euclidean space. The goal of the methodology for QM9 is graph feature prediction, and since the features are continuous values, this is a regression task. The molecular graphs present in QM9 contain no higher-order topological information. To address this limitation, we propose to lift the graph structure to facilitate the construction of different order simplices.
 
-To do this, we *lift* the point cloud to a Vietoris-Rips complex based on a parameter $\delta$ as described in Figure 2. There is a limit on the maximum rank of the simplices; however, due to naturally occurring phenomena, it can be constrained. For this particular set of experiments, it is restricted to rank 2. Additionally, this work presents two types of communication among simplices: 1) from $r$-simplices to $r$-simplices and 2) from $(r-1)$-simplices to $r$-simplices, however, we do not use $2$-simplices to $2$-simplices, as in [3]. It is not exactly clear why, other than the increased computational cost might be too high for the added benefit.
+To do this, we *lift* the point cloud to a Vietoris-Rips complex based on a parameter $\delta$ as described in Figure 2. There is a limit on the maximum rank of the simplices; however, due to naturally occurring phenomena, it can be constrained. For this particular set of experiments, it is restricted to rank 2. Additionally, this work presents two types of communication among simplices: 1) from $r$-simplices to $r$-simplices and 2) from $(r-1)$-simplices to $r$-simplices, however, we do not use $2$-simplices to $2$-simplices, as in [3].
 
-In addition to lifting of the structure to a higher-order topological structure, we will also lift the features to embed each $r$-simplex with a certain feature vector. We experiment with three methods: 1) A sum projection of the lower boundary of the simplex; 2) a mean projection of the lower boundary simplices; and 3) a mean of the 0-simplex components composing all lower boundary simplices, as shown in the figure and as worked out in [3]. Additionally, we also used a lift to the Alpha Complex. The alpha complex is a subcomplex of the Čech complex under the condition that the radius of the Čech complex is chosen to be $\sqrt{\alpha}$, where $\alpha$ is the parameter defining the alpha complex. Identical to the simplicial complexes, Alpha complexes are constructed until the second order. The motivation for this upper limit is to contain computational demands of training EMPSN within reasonable bounds. The invariant information is included as abstract edge attribute information between a simplex boundary within a communication framework. The simplex boundary features are shown in the table below:
+a higher-dimension to leverage certain higher-order interactions present in nature [CITE].
+
+In addition to lifting of the structure to a higher-order topological structure, we will also lift the features to embed each $r$-simplex with a certain feature vector. We experiment with three methods: 1) A sum projection of the lower boundary of the simplex; 2) a mean projection of the lower boundary simplices; and 3) a mean of the 0-simplex components composing all lower boundary simplices, as shown in Figure \ref{fig:simplex_features} and as worked out in \cite{eijkelboom_en_2023}. Additionally, we also used a lift to the Alpha Complex. The alpha complex is a subcomplex of the Čech complex under the condition that the radius of the Čech complex is chosen to be \(\sqrt{\alpha}\), where \(\alpha\) is the parameter defining the alpha complex. The invariant information is included as abstract edge attribute information between a simplex boundary within a communication framework. The simplex boundary features are shown in the table below:
 
 <img src="images/table-1.png" style="width=100%;">
 
@@ -53,20 +55,37 @@ This work proposes a step toward standardization in the field of TDL by using To
 
 ## 4 Original Paper
 
-The current paper applies the theory outlined above to two proof-of-concept studies. Since the first experiment is the focus of the paper and the code for the second experiment is not provided, we will gain more insight into the first experiment. This experiment utilizes the QM9 dataset and an Invariant MPSN with seven hidden layers and 77 hidden dimensions. The QM9 dataset is a dataset of molecules, and the task is to predict certain molecular properties that these molecules exhibit. Performance is measured using Mean Absolute Error (MAE), which is also the loss function for IMPSN. The initial graph structure of the molecules is dropped and a new hierarchical graph structure is created by the lifting operation, using the Vietoris-Rips lift. After the transformation, the network is trained for 1000 epochs and only 1 feature is predicted per network.
+The current paper applies the theory outlined above to two proof-of-concept studies. Since the first experiment is the focus of the paper and the code for the second experiment is not provided, we will gain more insight into the first experiment. This experiment utilizes the QM9 dataset and an Invariant MPSN with seven hidden layers and 77 hidden dimensions. The QM9 dataset is a dataset of molecules, and the task is to predict certain molecular properties that these molecules exhibit. Performance is measured using Mean Absolute Error (MAE), which is also the loss function for IMPSN. The initial graph structure of the molecules is dropped and a new hierarchical graph structure is created by the lifting operation, using the Vietoris-Rips lift. After the transformation the network is trained for 1000 epochs and only 1 feature is predicted per network.
 
-## 5 Author contribution
+## 5 Strengths and Weaknesses
+
+The invariant geometric framework combined with the topological information generated by the lifting operation is a unique strength of the proposed methodology it enables a data-efficient learning procedure with comparable results to state-of-the-art (SotA) methods. Even though the proposed methodology is not engineered for a specific scientific domain and does not employ a large network, it is comparable to or outperforms, more specialized methods (that utilize domain-specific strategies) on certain features and consistently outperforms EGNN.
+
+Another strength is the general applicability of this method. The proposed equivariant simplicial message passing network (EMPSN) is applicable to any geometric graph dataset. In addition, the results suggest that the incorporation of geometric information in the message passing procedure combats the over-smoothing of node features, a common problem in graph neural networks (GNNs).
+
+Although on paper, the methodology scores very well, the current implementation has some weaknesses. 
+
+A key weakness is related to the geometric realisation of the simplices. In the original paper, the author explains three $E(n)$ equivariant features, distance, angle, and volume, calculable for any dimensional simplex adjacency relation. In practice, these features are not always expressive or are identical in lower dimensional simplices.
+When analyzing the metadata of each adjacency relation, it becomes clear some features are consistently 0 or appear twice. For instance, Two of the three features of the 0-0 adjacency relation are 0, This happens when the volume of the two points is calculated. Other feature values occur twice in the same boundary relation. For instance, the volume of a 1d simplex is identical to the distance between the points of that 1d simplex. Yet both features exist in the metadata for the 1-1 adjacency relation. More than one-third of the invariant features are 0 or appear twice in the same adjacency relation. Since message passing only occurs between adjacency boundaries and not among different boundaries, there is full flexibility in feature selection; thus, it leaves to be questioned why the author decided on the original invariant feature metadata for each adjacency relation. In neither the paper nor the codebase, a justification can be found regarding decisions on invariant feature selection. 
+
+What ties into the aforementioned weakness is the fact that the codebase has very poor readability and provides little context. In addition, the codebase contains ample hard-coded functionality and is tightly coupled. Expanding the methodology to higher-order simplices would require a significant overhaul of multiple key classes and an understanding of their coupling. The combination of cryptic variable names, lack of documentation, and extensive use of hard-coded functionality make adapting the methodology difficult.  
+
+The last weakness relates to the scope of the codebase. The original paper describes two experiments: one using an Invariant MPSN and one that uses the full Equivariant MPSN. Unfortunately, the code for the latter is not included in the paper; therefore, the results of the equivariant MPSN are not reproducible. 
+
+Given the fact the results in the original paper are impressive, it raises the question of how much the performance of the methodology could be further improved given the aforementioned seemingly unoptimal design choices surrounding the invariant features. Although the concept of the proposed methodology is original and its theoretical foundation is thoroughly explained, there are some uncertainties relating to the implementation of EMPSN.
+
+## 6 Author contribution
 
 Our contribution can be summed up in three main points:
 - Refactoring of the original code to follow the guidelines of the TopoX suite framework. This includes the original topological lift and the feature lifting. TopoX creators have placed a request for people to translate lifting operations into their framework. Both these additions are qualitatively useful additions to not only the current paper, streamlining and clarifying the procedures, but also the TopoX suite, by increasing code written by their standards.
 - Implementation of the lifting procedure for the Alpha Complex and two different feature lifting procedures using projection sum and mean projection over lower simplices.
 - Application of the equivariance property on the MQ9 dataset 
 
-## 6 Experiments and Results
+## 7 Experiments and Results
 
 Our code is located in this forked repository: [https://github.com/DL2-UvA/challenge-icml-2024](https://github.com/DL2-UvA/challenge-icml-2024)
 
-### 6.1 Replication
+### 7.1 Replication
 
 The first attempt at replication was using the authors' first code. Some of the shortcomings were the difficulty of dealing with tensor stacking for mini-batching, the transformation of molecular properties, and index matching on the message-passing layer. Aside from that, the code was able to be run out of the box.
 
@@ -74,7 +93,7 @@ In the original implementation, MAE drops quickly but stabilizes around the 3 ma
 
 ![Validation MAE - Experiment 1](images/rep_validation.png)
 
-### 6.2 TopoX refactor
+### 7.2 TopoX refactor
 
 We executed and refactored the original code and adapted it to the TopoX framework. This included reworking the procedures for passing messages, aggregating messages using the scatter procedure, and correctly handling the invariant information along the simplices. We used communication between all simplices among $r$-simplices except on dimension and communication from lower to higher simplices for the two possible pairs. This implies that the maximum dimension was capped at 2 and the $\delta$ value was set as 3. We tried precomputing the invariances to no avail as the memory requirement becomes too high, so we remained with the original method by calculating invariances on the forward pass for a particular batch.
 
@@ -88,27 +107,9 @@ Figure 1 shows the MAE on the Vietoris-Rips complex of the QM9 dataset trained o
 
 Figure 2 shows a more complete picture, calculated over 100 instances, reflecting a stagnation of the actual performance of the model and overfitting toward the end. The minimum MAE is 0.85.
 
-### 6.3 Alpha Complex
+### 7.3 Alpha Complex
 
-We used the same parameter for executing the Alpha Complex. The only change incurred is capping the dimensionality of the resulting lifted topology. The lifting procedure for Alpha Complex implies that the higher $r$-simplex is not capped. Thus, we need to satisfy some constraints in regards to our architecture: 1) the maximum dimension should be capped to 2, and 2) there needs to be at least one $r$-simplex for each $r$ up to 2. In this case, this amounts to making sure the maximum dimension is at least 2; if not, then the graph is not included in the training/validation/test dataset.
-
-Figure 1 shows the training MAE of applying the Alpha Complex lift on 1000 randomly sampled instances of the dataset. It is very similar to the Vietoris-Rips Complex, except in the first 50 epochs where it is outperformed. Figure 2 shows that the overall performance of the Alpha Complex is lower than the Vietoris-Rips complex for this task. We assume this is likely due to the fact that Alpha complex creates fewer (higher order) simplices, which might lead to a worse outcome, especially on this dataset.
-
-## 7 Strengths and Weaknesses
-
-The invariant geometric framework combined with the topological information generated by the lifting operation is a unique strength of the proposed methodology. It enables a data-efficient learning procedure with comparable results to state-of-the-art (SotA) methods. Even though the proposed methodology is not engineered for a specific scientific domain and does not employ a large network, it is comparable to or outperforms more specialized methods (that utilize domain-specific strategies) on certain features and consistently outperforms EGNN.
-
-Another strength is the general applicability of this method. The proposed equivariant simplicial message passing network (EMPSN) is applicable to any geometric graph dataset. In addition, the results suggest that the incorporation of geometric information in the message passing procedure combats the over-smoothing of node features, a common problem in graph neural networks (GNNs).
-
-Although on paper, the methodology scores very well, the current implementation has some weaknesses.
-
-A key weakness is related to the geometric realization of the simplices. In the original paper, the author explains three $E(n)$ equivariant features—distance, angle, and volume—calculable for any dimensional simplex adjacency relation. In practice, these features are not always expressive or are identical in lower-dimensional simplices. When analyzing the metadata of each adjacency relation, it becomes clear some features are consistently 0 or appear twice. For instance, two of the three features of the 0-0 adjacency relation are 0. This happens when the volume of the two points is calculated. Other feature values occur twice in the same boundary relation. For instance, the volume of a 1D simplex is identical to the distance between the points of that 1D simplex. Yet both features exist in the metadata for the 1-1 adjacency relation. More than one-third of the invariant features are 0 or appear twice in the same adjacency relation. Since message passing only occurs between adjacency boundaries and not among different boundaries, there is full flexibility in feature selection; thus, it leaves to be questioned why the author decided on the original invariant feature metadata for each adjacency relation. In neither the paper nor the codebase can a justification be found regarding decisions on invariant feature selection.
-
-What ties into the aforementioned weakness is the fact that the codebase has very poor readability and provides little context. In addition, the codebase contains ample hard-coded functionality and is tightly coupled. Expanding the methodology to higher-order simplices would require a significant overhaul of multiple key classes and an understanding of their coupling. The combination of cryptic variable names, lack of documentation, and extensive use of hard-coded functionality make adapting the methodology difficult.
-
-The last weakness relates to the scope of the codebase. The original paper describes two experiments: one using an Invariant MPSN and one that uses the full Equivariant MPSN. Unfortunately, the code for the latter is not included in the paper; therefore, the results of the equivariant MPSN are not reproducible.
-
-Given the fact the results in the original paper are impressive, it raises the question of how much the performance of the methodology could be further improved given the aforementioned seemingly unoptimal design choices surrounding the invariant features. Although the concept of the proposed methodology is original and its theoretical foundation is thoroughly explained, there are some uncertainties relating to the implementation of EMPSN.
+Figure 1 shows the training MAE of applying the Alpha Complex lift on 1000 randomly sampled instance of the dataset. It is very similar to the Vietoris-Rips Complex, except in the first 50 epochs where it is outperformed. Figure 2 shows that the overall performance of the Alpha Complex is lower that the Vietoris-Rips complex for this task.
 
 ## 8 Conclusion
 
