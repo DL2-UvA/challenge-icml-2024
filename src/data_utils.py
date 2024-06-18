@@ -5,7 +5,7 @@ from tqdm import tqdm
 
 from torch_geometric.loader import DataLoader
 from torch_geometric.datasets import QM9
-from torch.geometric.data import OnDiskDataset
+from torch_geometric.data import OnDiskDataset
 import torch_geometric.transforms as T
 
 from data_transform import InputPreprocTransform, LabelPreprocTransform, qm9_to_ev, filter_not_enough_simplices_alpha
