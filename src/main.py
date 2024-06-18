@@ -36,7 +36,7 @@ def main(args):
         ).to(args.device)
 
     # Setup wandb
-    wandb.init(project=f"QM9-{args.target_name}-{args.lift_type}-{'preproc' if args.pre_proc else 'no-preproc'}")
+    wandb.init(project=f"TEST-QM9-{args.target_name}-{args.lift_type}-{'preproc' if args.pre_proc else 'no-preproc'}")
     wandb.config.update(vars(args))
     num_params = sum(p.numel() for p in model.parameters() if p.requires_grad)
     print(f'Number of parameters: {num_params}')
@@ -65,6 +65,7 @@ def main(args):
 
         model.train()
         for _, batch in enumerate(train_loader):
+            continue
             optimizer.zero_grad()
 
             batch = batch.to(args.device)
@@ -80,6 +81,7 @@ def main(args):
 
         model.eval()
         for _, batch in enumerate(val_loader):
+            continue
             batch = batch.to(args.device)
             pred = model(batch)
             mae = criterion(pred * mad + mean, batch.y)
