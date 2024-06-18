@@ -4,7 +4,7 @@ from torch import Tensor
 from tqdm import tqdm
 
 from torch_geometric.loader import DataLoader
-from torch_geometric.datasets import QM9
+from torch_geometric.datasets import QM9, OnDiskDataset
 import torch_geometric.transforms as T
 
 from data_transform import InputPreprocTransform, LabelPreprocTransform, qm9_to_ev, filter_not_enough_simplices_alpha
@@ -28,9 +28,33 @@ def calc_mean_mad(loader: DataLoader) -> Tuple[Tensor, Tensor]:
     mad = sum([abs(v - mean) for v in values]) / len(values)
     return mean, mad
 
+def load_on_disk(args):
+    preproc_str = 'preproc' if args.pre_proc else 'normal'
+    data_root = f'./datasets/QM9_delta_{args.dis}_dim_{args.dim}_{args.lift_type}_debug_{preproc_str}'
+
+    dataset = OnDiskDataset(root=data_root)
+
+    TRANSFORM_DICT = LIFT_INV_TYPE_DICT if args.pre_proc else LIFT_TYPE_DICT 
+    transform = T.Compose([
+        InputPreprocTransform(),
+        TRANSFORM_DICT[args.lift_type](complex_dim=args.dim, delta=args.dis, feature_lifting='ProjectionElementWiseMean'),
+        ])
+    dataset = [transform(data) for data in dataset[:7]]
+    print('Preparing labels...')
+    label_transform = LabelPreprocTransform(target_name=args.target_name)
+    dataset = [label_transform(data) for data in tqdm(dataset)]
+    print('Data prepared')
+
+    return dataset
 
 # TODO FIx this crap
 def _load_debug(args):
+    try:
+        dataset = load_on_disk(args)
+        return dataset
+    except:
+        pass
+
     preproc_str = 'preproc' if args.pre_proc else 'normal'
     data_root = f'./datasets/QM9_delta_{args.dis}_dim_{args.dim}_{args.lift_type}_debug_{preproc_str}'
     pre_filter = None
@@ -51,6 +75,7 @@ def _load_debug(args):
     print('Data prepared')
 
     return dataset
+
 
 def _load_normal(args):
     preproc_str = 'preproc' if args.pre_proc else 'normal'
