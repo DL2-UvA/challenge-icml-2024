@@ -40,8 +40,9 @@ def load_on_disk(args):
         InputPreprocTransform(),
         TRANSFORM_DICT[args.lift_type](complex_dim=args.dim, delta=args.dis, feature_lifting='ProjectionElementWiseMean'),
         ])
+    print(dataset)
     dataset = [transform(data) for data in dataset[:7]]
-    print('Preparing labels...')
+    print('Preparing ondisk labels...')
     label_transform = LabelPreprocTransform(target_name=args.target_name)
     dataset = [label_transform(data) for data in tqdm(dataset)]
     print('Data prepared')
