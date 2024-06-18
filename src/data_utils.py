@@ -37,6 +37,7 @@ def _load_debug(args):
     if args.lift_type == 'alpha':
         pre_filter = filter_not_enough_simplices_alpha
     dataset = QM9(root=data_root, pre_filter=pre_filter, force_reload=True)
+    dataset.to_on_disk_dataset(log=True)
     print('About to prepare data')
     TRANSFORM_DICT = LIFT_INV_TYPE_DICT if args.pre_proc else LIFT_TYPE_DICT 
     transform = T.Compose([
