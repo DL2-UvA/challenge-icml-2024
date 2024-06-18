@@ -33,7 +33,7 @@ def load_on_disk(args):
     preproc_str = 'preproc' if args.pre_proc else 'normal'
     data_root = f'./datasets/QM9_delta_{args.dis}_dim_{args.dim}_{args.lift_type}_debug_{preproc_str}'
 
-    dataset = OnDiskDataset(root=data_root)
+    dataset = OnDiskDataset(root=data_root, log=True)
 
     TRANSFORM_DICT = LIFT_INV_TYPE_DICT if args.pre_proc else LIFT_TYPE_DICT 
     transform = T.Compose([
