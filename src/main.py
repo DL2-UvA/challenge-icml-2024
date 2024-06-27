@@ -46,7 +46,7 @@ def main(args):
     train_loader, val_loader, test_loader = generate_loaders_qm9(args)
     end_lift_time = time.process_time()
     wandb.log({
-        'Lift time': end_lift_time - start_lift_time
+        'Data load time': end_lift_time - start_lift_time
     })
 
     mean, mad = calc_mean_mad(train_loader)
@@ -60,9 +60,11 @@ def main(args):
     scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(optimizer, args.epochs)
     best_train_mae, best_val_mae, best_model = float('inf'), float('inf'), None
 
+
     for _ in tqdm(range(args.epochs)):
         epoch_mae_train, epoch_mae_val = 0, 0
 
+        start_epoch_time = time.process_time()
         model.train()
         for _, batch in enumerate(train_loader):
             continue
@@ -78,6 +80,10 @@ def main(args):
 
             optimizer.step()
             epoch_mae_train += mae.item()
+        end_epoch_time = time.process_time()
+        wandb.log({
+            'Epoch time': end_epoch_time - start_epoch_time
+        })
 
         model.eval()
         for _, batch in enumerate(val_loader):
