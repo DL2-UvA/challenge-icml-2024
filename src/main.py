@@ -6,9 +6,9 @@ from tqdm import tqdm
 
 from modules.models.simplicial.empsn import EMPSN
 
-from data_utils import generate_loaders_qm9, calc_mean_mad
+from src.data_utils import generate_loaders_qm9, calc_mean_mad
 import time
-from utils import set_seed
+from src.utils import set_seed
 
 
 def main(args):

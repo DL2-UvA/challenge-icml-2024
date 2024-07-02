@@ -66,10 +66,7 @@ def get_complex_connectivity(complex, max_rank, signed=False):
     for rank_idx in range(max_rank + 1):
         for connectivity_info in [
             "incidence",
-            "down_laplacian",
-            "up_laplacian",
             "adjacency",
-            "hodge_laplacian",
         ]:
             try:
                 connectivity[f"{connectivity_info}_{rank_idx}"] = from_sparse(

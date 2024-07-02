@@ -8,7 +8,7 @@ from torch_geometric.datasets import QM9
 from torch_geometric.data import OnDiskDataset
 import torch_geometric.transforms as T
 
-from data_transform import InputPreprocTransform, LabelPreprocTransform, qm9_to_ev, filter_not_enough_simplices_alpha
+from src.data_transform import InputPreprocTransform, LabelPreprocTransform, qm9_to_ev, filter_not_enough_simplices_alpha
 from modules.transforms.liftings.graph2simplicial.vietoris_rips_lifting import SimplicialVietorisRipsLifting, InvariantSimplicialVietorisRipsLifting
 from modules.transforms.liftings.graph2simplicial.alpha_complex_lifting import SimplicialAlphaComplexLifting
 
@@ -51,19 +51,12 @@ def load_on_disk(args):
 
 # TODO FIx this crap
 def _load_debug(args):
-    try:
-        dataset = load_on_disk(args)
-        return dataset
-    except:
-        pass
-
     preproc_str = 'preproc' if args.pre_proc else 'normal'
     data_root = f'./datasets/QM9_delta_{args.dis}_dim_{args.dim}_{args.lift_type}_debug_{preproc_str}'
     pre_filter = None
     if args.lift_type == 'alpha':
         pre_filter = filter_not_enough_simplices_alpha
     dataset = QM9(root=data_root, pre_filter=pre_filter, force_reload=True)
-    dataset.to_on_disk_dataset(log=True)
     print('About to prepare data')
     TRANSFORM_DICT = LIFT_INV_TYPE_DICT if args.pre_proc else LIFT_TYPE_DICT 
     transform = T.Compose([

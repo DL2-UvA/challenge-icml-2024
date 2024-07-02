@@ -5,14 +5,14 @@ import copy
 from tqdm import tqdm
 import lightning as L
 from lightning.pytorch.loggers import WandbLogger
+import time
 
 
 from modules.models.simplicial.empsn import EMPSN
-from light_empsn import LitEMPSN
+from src.light_empsn import LitEMPSN
 
-from data_utils import generate_loaders_qm9, calc_mean_mad
-import time
-from utils import set_seed
+from src.data_utils import generate_loaders_qm9, calc_mean_mad
+from src.utils import set_seed
 
 num_input = 15
 num_out = 1

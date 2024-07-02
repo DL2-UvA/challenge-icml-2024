@@ -89,6 +89,13 @@ class BaseSimplicialVRLifting(Graph2SimplicialLifting):
         initial_data = data.to_dict()
         lifted_topology = self.lift_topology(data)
         lifted_topology = self.feature_lifting(lifted_topology)
+
+
+        del initial_data["x"]
+        del initial_data["z"]
+        del initial_data["edge_index"]
+        del initial_data["edge_attr"]
+
         return SimplexData(**initial_data, **lifted_topology)
 
 class InvariantSimplicialVietorisRipsLifting(BaseSimplicialVRLifting):

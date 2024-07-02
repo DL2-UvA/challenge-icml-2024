@@ -26,8 +26,8 @@ class LitEMPSN(L.LightningModule):
 
         mae = self.criterion(pred * self.mad + self.mean, batch.y)
 
-        self.log("train_loss", loss)
-        self.log("train_mae", mae, prog_bar=True)
+        self.log("train_loss", loss, on_step=False, on_epoch=True)
+        self.log("train_mae", mae, prog_bar=True, on_step=False, on_epoch=True)
         return loss
 
     def validation_step(self, batch):
@@ -37,8 +37,8 @@ class LitEMPSN(L.LightningModule):
 
         mae = self.criterion(pred * self.mad + self.mean, batch.y)
 
-        self.log("val_loss", loss)
-        self.log("val_mae", mae, prog_bar=True)
+        self.log("val_loss", loss, on_step=False, on_epoch=True)
+        self.log("val_mae", mae, prog_bar=True, on_step=False, on_epoch=True)
         return loss
 
     def test_step(self, batch):
