@@ -67,7 +67,6 @@ def main(args):
         start_epoch_time = time.process_time()
         model.train()
         for _, batch in enumerate(train_loader):
-            continue
             optimizer.zero_grad()
 
             batch = batch.to(args.device)
@@ -87,7 +86,6 @@ def main(args):
 
         model.eval()
         for _, batch in enumerate(val_loader):
-            continue
             batch = batch.to(args.device)
             pred = model(batch)
             mae = criterion(pred * mad + mean, batch.y)
