@@ -5,6 +5,7 @@ import copy
 from tqdm import tqdm
 import lightning as L
 from lightning.pytorch.loggers import WandbLogger
+from lightning.pytorch import seed_everything
 import time
 
 
@@ -45,6 +46,7 @@ def main(args):
     num_params = sum(p.numel() for p in model.parameters() if p.requires_grad)
     print(f'Number of parameters: {num_params}')
 
+    seed_everything(args.seed)
     # # Get loaders
     start_lift_time = time.process_time()
     train_loader, val_loader, test_loader = generate_loaders_qm9(args)
@@ -60,8 +62,8 @@ def main(args):
 
     wandb_logger = WandbLogger()
 
-    empsn = LitEMPSN(model, mae=mad, mad=mad, mean=mean, lr=args.lr, weight_decay=args.weight_decay)
-    trainer = L.Trainer(max_epochs=args.epochs, gradient_clip_val=args.gradient_clip, enable_checkpointing=False, accelerator=args.device, devices=1, logger=wandb_logger)# accelerator='gpu', devices=1)
+    empsn = LitEMPSN(model, train_samples=len(train_loader.dataset), validation_samples=len(val_loader.dataset), test_samples=len(test_loader.dataset), mae=mad, mad=mad, mean=mean, lr=args.lr, weight_decay=args.weight_decay)
+    trainer = L.Trainer(deterministic=True, max_epochs=args.epochs, gradient_clip_val=args.gradient_clip, enable_checkpointing=False, accelerator=args.device, devices=1, logger=wandb_logger)# accelerator='gpu', devices=1)
     trainer.fit(empsn, train_dataloaders=train_loader, val_dataloaders=val_loader)
     trainer.test(empsn, dataloaders=test_loader)
 
