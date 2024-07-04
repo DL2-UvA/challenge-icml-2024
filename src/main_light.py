@@ -75,8 +75,8 @@ def main(args):
                         accelerator=args.device, devices=1, logger=wandb_logger)# accelerator='gpu', devices=1)
 
 
-    tuner = L.pytorch.tuner.Tuner(trainer)
-    tuner.scale_batch_size(empsn, mode='binsearch', datamodule=qm9_datamodule)
+    #tuner = L.pytorch.tuner.Tuner(trainer)
+    #tuner.scale_batch_size(empsn, mode='binsearch', datamodule=qm9_datamodule)
 
     trainer.fit(empsn, datamodule=qm9_datamodule)
     trainer.test(empsn, datamodule=qm9_datamodule)
