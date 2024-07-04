@@ -26,7 +26,16 @@ class LitEMPSN(L.LightningModule):
         optimizer = optim.Adam(self.model.parameters(), lr=self.lr, weight_decay=self.weight_decay)
         scheduler = optim.lr_scheduler.CosineAnnealingLR(optimizer, self.trainer.max_epochs)
 
-        return [optimizer], [scheduler]
+        return {
+                'optimizer': optimizer,
+                'lr_scheduler': {
+                    'scheduler': scheduler,
+                    'monitor': 'val_loss',
+                    'interval': 'epoch',
+                    'frequency': 1,
+                }
+            }
+            
 
     def training_step(self, batch, batch_idx):
         batch = batch.to(self.device)

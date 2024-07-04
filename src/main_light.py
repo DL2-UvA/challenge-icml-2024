@@ -11,6 +11,7 @@ import time
 
 from modules.models.simplicial.empsn import EMPSN
 from src.light_empsn import LitEMPSN
+from src.lit_datamodule import QM9DataModule
 
 from src.data_utils import generate_loaders_qm9, calc_mean_mad
 from src.utils import set_seed
@@ -49,23 +50,31 @@ def main(args):
     seed_everything(args.seed)
     # # Get loaders
     start_lift_time = time.process_time()
-    train_loader, val_loader, test_loader = generate_loaders_qm9(args)
+    qm9_datamodule = QM9DataModule(args, batch_size=args.batch_size)
+    # TODO: FIX could be better way to have calc_mean_mad inside LitEMPSN
+    qm9_datamodule.setup('fit')
     end_lift_time = time.process_time()
     wandb.log({
         'Lift time': end_lift_time - start_lift_time
     })
 
-    mean, mad = calc_mean_mad(train_loader)
+    mean, mad = calc_mean_mad(qm9_datamodule.train_dataloader())
     mean, mad = mean.to(args.device), mad.to(args.device)
 
     print('Almost at training...')
 
     wandb_logger = WandbLogger()
 
-    empsn = LitEMPSN(model, train_samples=len(train_loader.dataset), validation_samples=len(val_loader.dataset), test_samples=len(test_loader.dataset), mae=mad, mad=mad, mean=mean, lr=args.lr, weight_decay=args.weight_decay)
-    trainer = L.Trainer(deterministic=True, max_epochs=args.epochs, gradient_clip_val=args.gradient_clip, enable_checkpointing=False, accelerator=args.device, devices=1, logger=wandb_logger)# accelerator='gpu', devices=1)
-    trainer.fit(empsn, train_dataloaders=train_loader, val_dataloaders=val_loader)
-    trainer.test(empsn, dataloaders=test_loader)
+    empsn = LitEMPSN(model, train_samples=len(qm9_datamodule.train_dataloader().dataset),
+                      validation_samples=len(qm9_datamodule.val_dataloader().dataset),
+                      test_samples=len(qm9_datamodule.test_dataloader().dataset),
+                       mae=mad, mad=mad, mean=mean, lr=args.lr, weight_decay=args.weight_decay)
+    trainer = L.Trainer(check_val_every_n_epoch=20, deterministic=True, max_epochs=args.epochs, gradient_clip_val=args.gradient_clip, enable_checkpointing=False, accelerator=args.device, devices=1, logger=wandb_logger)# accelerator='gpu', devices=1)
+    tuner = L.pytorch.tuner.Tuner(trainer)
+    tuner.scale_batch_size(empsn, mode='binsearch', datamodule=qm9_datamodule)
+
+    trainer.fit(empsn, datamodule=qm9_datamodule)
+    trainer.test(empsn, datamodule=qm9_datamodule)
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
