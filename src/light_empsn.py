@@ -30,7 +30,7 @@ class LitEMPSN(L.LightningModule):
                 'optimizer': optimizer,
                 'lr_scheduler': {
                     'scheduler': scheduler,
-                    'monitor': 'val_loss',
+                    'monitor': 'train_loss',
                     'interval': 'epoch',
                     'frequency': 1,
                 }
