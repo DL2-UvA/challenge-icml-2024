@@ -49,11 +49,11 @@ def main(args):
 
     seed_everything(args.seed)
     # # Get loaders
-    start_lift_time = time.process_time()
+    start_lift_time = time.perf_counter()
     qm9_datamodule = QM9DataModule(args, batch_size=args.batch_size)
     # TODO: FIX could be better way to have calc_mean_mad inside LitEMPSN
     qm9_datamodule.setup('fit')
-    end_lift_time = time.process_time()
+    end_lift_time = time.perf_counter()
     wandb.log({
         'Lift time': end_lift_time - start_lift_time
     })
@@ -70,9 +70,11 @@ def main(args):
                       test_samples=len(qm9_datamodule.test_dataloader().dataset),
                        mae=mad, mad=mad, mean=mean, lr=args.lr, weight_decay=args.weight_decay)
     trainer = L.Trainer(
+                        auto_lr_find=True,
                         check_val_every_n_epoch=20, deterministic=True, max_epochs=args.epochs,
                         gradient_clip_val=args.gradient_clip, enable_checkpointing=False,
                         accelerator=args.device, devices=1, logger=wandb_logger)# accelerator='gpu', devices=1)
+    trainer.tune(model)
 
 
     #tuner = L.pytorch.tuner.Tuner(trainer)
@@ -107,7 +109,7 @@ if __name__ == "__main__":
                         help='lift type')
 
     # Optimizer parameters
-    parser.add_argument('--lr', type=float, default=5e-4,
+    parser.add_argument('--lr', type=float, default=1.63e-5, #default=5e-4,
                         help='learning rate')
     parser.add_argument('--weight_decay', type=float, default=1e-16,
                         help='learning rate')
