@@ -70,7 +70,7 @@ def main(args):
                       test_samples=len(qm9_datamodule.test_dataloader().dataset),
                        mae=mad, mad=mad, mean=mean, lr=args.lr, weight_decay=args.weight_decay)
     trainer = L.Trainer(
-                        auto_lr_find=True,
+                        auto_lr_finder=True,
                         check_val_every_n_epoch=20, deterministic=True, max_epochs=args.epochs,
                         gradient_clip_val=args.gradient_clip, enable_checkpointing=False,
                         accelerator=args.device, devices=1, logger=wandb_logger)# accelerator='gpu', devices=1)
