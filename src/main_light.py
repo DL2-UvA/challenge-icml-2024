@@ -75,7 +75,7 @@ def main(args):
                         gradient_clip_val=args.gradient_clip, enable_checkpointing=False,
                         accelerator=args.device, devices=1, logger=wandb_logger)# accelerator='gpu', devices=1)
 
-    trainer.tune(model)
+    #trainer.tune(model)
 
 
     #tuner = L.pytorch.tuner.Tuner(trainer)
