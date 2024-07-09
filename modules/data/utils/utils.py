@@ -448,16 +448,48 @@ def make_hash(o):
     # Convert the hex back to int and restrict it to the relevant int range
     return int(hash_as_hex, 16) % 4294967295
 
-def find_non_overlap(tensor1, tensor2):
+def find_non_overlap_vectorized(edge_nodes: torch.Tensor, triangle_nodes: torch.Tensor):
+    """
+    Vectorized function to find non-overlapping nodes between edge_nodes and triangle_nodes.
+    
+    Args:
+    edge_nodes (torch.Tensor): Tensor of shape (N, 2) representing edge nodes.
+    triangle_nodes (torch.Tensor): Tensor of shape (N, 3) representing triangle nodes.
+    
+    Returns:
+    torch.Tensor: Boolean tensor of shape (N, 3) indicating the position of non-overlapping nodes.
+    """
+    # Expand dimensions for broadcasting
+    edge_nodes_expanded = edge_nodes.unsqueeze(2)  # Shape: (N, 2, 1)
+    triangle_nodes_expanded = triangle_nodes.unsqueeze(1)  # Shape: (N, 1, 3)
+
+    # Compare edge_nodes with triangle_nodes
+    matches = (edge_nodes_expanded == triangle_nodes_expanded)  # Shape: (N, 2, 3)
+
+    # Count matches for each node in triangle_nodes
+    match_count = matches.sum(dim=1)  # Shape: (N, 3)
+
+    # The non-overlapping node will have zero matches
+    output_tensor = (match_count == 0)  # Shape: (N, 3)
+
+    # Check if there's exactly one non-overlapping item per row
+    valid_rows = output_tensor.sum(dim=1) == 1
+    if not valid_rows.all():
+        invalid_rows = (~valid_rows).nonzero().squeeze()
+        raise ValueError(f"There should be exactly one non-overlapping item per row. Invalid rows: {invalid_rows.tolist()}")
+
+    return output_tensor
+
+def find_non_overlap(edge_nodes: torch.Tensor, triangle_nodes: torch.Tensor):
     """
     
     """
 
-    # Initialize an output boolean tensor with the same shape as tensor2
-    output_tensor = torch.zeros_like(tensor2, dtype=torch.bool)
+    # Initialize an output boolean tensor with traingle node shape
+    output_tensor = torch.zeros_like(triangle_nodes, dtype=torch.bool, device=edge_nodes.device)
     
     # Loop through each row
-    for i, (row1, row2) in enumerate(zip(tensor1, tensor2)):
+    for i, (row1, row2) in enumerate(zip(edge_nodes, triangle_nodes)):
         # Convert the rows to sets
         set1 = set(row1.tolist())
         set2 = set(row2.tolist())
@@ -538,8 +570,8 @@ def compute_invariance_r_minus_1_to_r(simplices: Dict[int, torch.Tensor], pos: t
         Computes the invariances from r-cells to r-cells geometrical properties
         Parameters
         ----------
-        simplices : dict[int, torch.Tensor], length=max_rank+1, shape = (n_rank_r_cells, r)
-            Indices of each component of a simplex with respect to the nodes in the original graph 
+        simplices : dict[int, torch.Tensor], length=max_rank+1, shape = (n_rank_r_cells, r_components)
+            List of components composing each simplex indexed in order
         pos : torch.Tensor, shape = (n_rank_0_cells, 3)
             Incidence matrices :math:`B_r` mapping r-cells to (r-1)-cells.
         inc : dict[int, torch.Tensor], length=max_rank+1, shape = (n_rank_r_minus_1_cells, n_rank_r_cells)
@@ -548,27 +580,49 @@ def compute_invariance_r_minus_1_to_r(simplices: Dict[int, torch.Tensor], pos: t
     """
     inc_dict={}
     # for 0_1 dimensional simplices:
+
     result_matrix_0_1 = []
+
+
+    # Indices of sending 0-simplices
     sending_nodes = inc[0][0]
+    # Indices of receiving 1-simplices
     receiving_simplices = inc[0][1]
+
+    # Indices of the sending 1-simplices
     sending_edges = inc[1][0]
+
+    # Node components of the  receiving 1-simplices
     nodes_of_receiving_simplices = simplices[1][receiving_simplices]
+
+    # Which nodes are not the sending nodes
     mask = nodes_of_receiving_simplices != sending_nodes.unsqueeze(1)
+
+    # Nodes of receiving simplices which are not the sending nodes
     receiving_nodes = nodes_of_receiving_simplices[mask]
     
     distance = torch.linalg.norm(pos[sending_nodes] - pos[receiving_nodes], dim=1)
     features = distance.view(-1, 1).repeat(1, 3)
+
     #area of the sending node is 0.
     features[:,1] = 0
     inc_dict[0] = features
     
+    # Index of receiving 2-simplices
     receiving_triangles = inc[1][1]
     
+    # Components of receiving 2-simplices
     triangle_nodes = simplices[2][receiving_triangles]
+
+    # Components of sending 1-simplices
     sending_edge_nodes = simplices[1][sending_edges]   
-    a_index = find_non_overlap(sending_edge_nodes,triangle_nodes)
+
+    a_index = find_non_overlap_vectorized(sending_edge_nodes, triangle_nodes)
+
+    
     
     p1, p2, a= pos[sending_edge_nodes[:,0]], pos[sending_edge_nodes[:,1]], pos[triangle_nodes[a_index]]
+
     v1, v2, b = p1 - a, p2 - a, p1 - p2
     eps = 1e-6
     v1_n, v2_n, b_n = torch.linalg.norm(v1, dim=1), torch.linalg.norm(v2, dim=1), torch.linalg.norm(b, dim=1)
