@@ -70,7 +70,7 @@ def main(args):
                       validation_samples=len(qm9_datamodule.val_dataloader().dataset),
                       test_samples=len(qm9_datamodule.test_dataloader().dataset),
                        mae=mad, mad=mad, mean=mean, lr=args.lr, weight_decay=args.weight_decay)
-    trainer = L.Trainer(callbacks=[LearningRateFinder()],
+    trainer = L.Trainer(
                         check_val_every_n_epoch=20, deterministic=True, max_epochs=args.epochs,
                         gradient_clip_val=args.gradient_clip, enable_checkpointing=False,
                         accelerator=args.device, devices=1, logger=wandb_logger)# accelerator='gpu', devices=1)
@@ -110,7 +110,7 @@ if __name__ == "__main__":
                         help='lift type')
 
     # Optimizer parameters
-    parser.add_argument('--lr', type=float, default=1.63e-5, #default=5e-4,
+    parser.add_argument('--lr', type=float, default=5e-3,
                         help='learning rate')
     parser.add_argument('--weight_decay', type=float, default=1e-16,
                         help='learning rate')
