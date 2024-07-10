@@ -110,7 +110,7 @@ if __name__ == "__main__":
                         help='lift type')
 
     # Optimizer parameters
-    parser.add_argument('--lr', type=float, default=5e-3,
+    parser.add_argument('--lr', type=float, default=5e-4,
                         help='learning rate')
     parser.add_argument('--weight_decay', type=float, default=1e-16,
                         help='learning rate')
