@@ -29,6 +29,8 @@ class QM9DataModule(L.LightningDataModule):
         super().__init__()
         preproc_str = 'preproc' if args.pre_proc else 'normal'
         self.data_dir = f'./datasets/QM9_delta_{args.dis}_dim_{args.dim}_{args.lift_type}_{preproc_str}'
+        if args.benchmark:
+            self.data_dir += '_benchmark'
         self.batch_size = batch_size
         self.debug = args.debug
         self.benchmark = args.benchmark
