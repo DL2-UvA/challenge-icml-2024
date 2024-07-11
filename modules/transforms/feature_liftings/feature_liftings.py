@@ -1,5 +1,6 @@
 import torch
 import torch_geometric
+import torch.nn.functional as F
 from collections import defaultdict 
 
 
@@ -147,30 +148,46 @@ class ProjectionElementWiseMean(torch_geometric.transforms.BaseTransform):
         -------
         torch_geometric.data.Data | dict
             The lifted data."""
+        max_dim = max([int(key.split("_")[-1]) for key in data if "x_idx" in key])
 
+        # Create a list of all x_idx tensors
+        x_idx_tensors = [data[f"x_idx_{i}"] for i in range(max_dim + 1)]
 
-        max_dim = max([int(key.split("_")[1]) for key in data.keys() if "incidence" in key])
+        # Find the maximum sizes
+        max_simplices = max(tensor.size(0) for tensor in x_idx_tensors)
+        max_nodes = max(tensor.size(1) for tensor in x_idx_tensors)
 
+        # Pad tensors to have the same size
+        padded_tensors = [F.pad(tensor, (0, max_nodes - tensor.size(1), 0, max_simplices - tensor.size(0)))
+                        for tensor in x_idx_tensors]
 
-        simplex_test_dict = defaultdict(list)
-        for i in range(max_dim+1):
-            z = []
-            # For the k-component point in the i-simplices where k <= i
-            for k in range(i+1):
-                # Get the k-node indices of the i-simplices (i.e. the k-components of the i-simplices)
-                z_i_idx = data[f'x_idx_{i}'][:, k]
-                # Get the node embeddings for the k-components of the i-simplices
-                z_i = data['x_0'][z_i_idx]
-                z.append(z_i)
-            z = torch.stack(z, dim=2)
-            # Mean along the simplex dimension
-            z = z.mean(axis=2)
-            # Assign to each i-simplex the corresponding feature
-            for l, embedding in enumerate(z):
-                simplex_test_dict[i].append(z[l])
+        # Stack all x_idx tensors
+        all_indices = torch.stack(padded_tensors)
 
-        for k, v in simplex_test_dict.items():
-            data[f'x_{k}'] = torch.stack(v)
+        # Create a mask for valid indices
+        mask = all_indices != 0
+
+        # Replace 0s with a valid index (e.g., 0) to avoid indexing errors
+        all_indices = all_indices.clamp(min=0)
+
+        # Get all embeddings at once
+        all_embeddings = data["x_0"][all_indices]
+
+        # Apply mask to set padded embeddings to 0
+        all_embeddings = all_embeddings * mask.unsqueeze(-1).float()
+
+        # Compute sum and count of non-zero elements
+        embedding_sum = all_embeddings.sum(dim=2)
+        count = mask.sum(dim=2).clamp(min=1)  # Avoid division by zero
+
+        # Compute mean
+        mean_embeddings = embedding_sum / count.unsqueeze(-1)
+
+        # Assign results back to data dictionary
+        for i in range(1, max_dim + 1):
+            original_size = x_idx_tensors[i].size(0)
+            data[f"x_{i}"] = mean_embeddings[i, :original_size]
+
         return data
 
     def forward(
