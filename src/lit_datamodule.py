@@ -55,7 +55,6 @@ class QM9DataModule(L.LightningDataModule):
                 wandb.log({
                     'Lift individual': time.perf_counter() - start_lift_time
                 })
-                break
         elif self.debug:
             dataset = QM9(root=self.data_dir, pre_filter=self.pre_filter)
             dataset = [self.transform(data) for data in dataset[:self.DEBUG_TRAIN+self.DEBUG_VAL+self.DEBUG_TEST+1]]
