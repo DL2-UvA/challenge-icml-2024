@@ -96,6 +96,8 @@ if __name__ == "__main__":
                         help='num workers')
     parser.add_argument('--debug', action='store_true',
                         help='debug mode')
+    parser.add_argument('--benchmark', action='store_true',
+                        help='benchmark mode')
 
     # Model parameters
     parser.add_argument('--model_name', type=str, default='empsn',
@@ -130,6 +132,7 @@ if __name__ == "__main__":
                         help='random seed')
     parser.add_argument('--pre_proc', action='store_true',
                         help='preprocessing')
+
 
 
     parsed_args = parser.parse_args()

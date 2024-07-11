@@ -1,4 +1,5 @@
 import lightning as L
+import time
 import torch_geometric.transforms as T
 from tqdm import tqdm
 
@@ -23,12 +24,14 @@ class QM9DataModule(L.LightningDataModule):
     DEBUG_VAL = 2
     DEBUG_TEST = 1
 
-    def __init__(self, args, batch_size: int = 32):
+    def __init__(self, args, batch_size: int = 32, wandb=None):
         super().__init__()
         preproc_str = 'preproc' if args.pre_proc else 'normal'
         self.data_dir = f'./datasets/QM9_delta_{args.dis}_dim_{args.dim}_{args.lift_type}_{preproc_str}'
         self.batch_size = batch_size
         self.debug = args.debug
+        self.wandb = wandb
+        self.benchmark = args.benchmark
         TRANSFORM_DICT = LIFT_INV_TYPE_DICT if args.pre_proc else LIFT_TYPE_DICT 
         self.transform = T.Compose([
             InputPreprocTransform(),
@@ -41,7 +44,16 @@ class QM9DataModule(L.LightningDataModule):
     def setup(self, stage: str):
 
         print('Preparing data...')
-        if self.debug:
+        if self.benchmark:
+            dataset_ = QM9(root=self.data_dir, pre_filter=self.pre_filter)
+            dataset = []
+            for data in dataset_:
+                start_lift_time = time.perf_counter()
+                dataset.append(self.transform(data))
+                self.wandb.log({
+                    'Lift individual': time.perf_counter() - start_lift_time
+                })
+        elif self.debug:
             dataset = QM9(root=self.data_dir, pre_filter=self.pre_filter)
             dataset = [self.transform(data) for data in dataset[:self.DEBUG_TRAIN+self.DEBUG_VAL+self.DEBUG_TEST+1]]
         else:

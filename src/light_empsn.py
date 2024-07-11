@@ -39,7 +39,9 @@ class LitEMPSN(L.LightningModule):
 
     def training_step(self, batch, batch_idx):
         batch = batch.to(self.device)
+        start_forward_time = time.perf_counter()
         pred = self.model(batch)
+        self.log('forward_time', time.perf_counter() - start_forward_time)
         loss = self.criterion(pred, (batch.y - self.mean) / self.mad)
 
         mae = self.criterion(pred * self.mad + self.mean, batch.y)
