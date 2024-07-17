@@ -90,7 +90,7 @@ def main(args):
         empsn.load_from_checkpoint(best_model)
 
     trainer = L.Trainer(callbacks=[best_checkpoint, latest_checkpoint],deterministic=True, max_epochs=args.epochs,
-                        gradient_clip_val=args.gradient_clip, enable_checkpointing=False,
+                        gradient_clip_val=args.gradient_clip, enable_checkpointing=True,
                         accelerator=args.device, devices=1, logger=wandb_logger)# accelerator='gpu', devices=1)
 
     #trainer.tune(model)

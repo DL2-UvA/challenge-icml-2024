@@ -49,7 +49,7 @@ class EConv(MessagePassing):
         aggr_norm: bool = False,
         update_func: Literal["relu", "sigmoid", "silu", None] = None,
         att: bool = False,
-        initialization: Literal["xavier_uniform", "xavier_normal", "uniform"] = "xavier_uniform",
+        initialization: Literal["xavier_uniform", "xavier_normal", "uniform"] = "uniform",
         initialization_gain: float = 1.414,
         with_linear_transform_1: bool = True,
         with_linear_transform_2: bool = True,
