@@ -73,10 +73,14 @@ def main(args):
     models = os.listdir(ckpt_folder)
     best_model = None
     if len(models):
+        for model in models:
+            if 'latest' in model:
+                best_model = model
+                break
         best_model = os.path.join(ckpt_folder, best_model) 
 
-    best_checkpoint = L.pytorch.callbacks.ModelCheckpoint(monitor='val_loss', mode='min', save_top_k=1, dir_path='models', filename='empsn-{epoch}-{val_loss:.2f}')
-    latest_checkpoint = L.pytorch.callbacks.ModelCheckpoint(monitor='epoch', mode='max', save_top_k=1, filename='latest-{epoch}-{step}', every_n_epochs=20)
+    best_checkpoint = L.pytorch.callbacks.ModelCheckpoint(monitor='val_loss', mode='min', save_top_k=1, dirpath='models', filename='empsn-{epoch}-{val_loss:.2f}')
+    latest_checkpoint = L.pytorch.callbacks.ModelCheckpoint(monitor='epoch', mode='max', save_top_k=1, dirpath='models', filename='latest-{epoch}-{step}', every_n_epochs=20)
 
     empsn = LitEMPSN(model, train_samples=len(qm9_datamodule.train_dataloader().dataset),
                       validation_samples=len(qm9_datamodule.val_dataloader().dataset),
