@@ -77,6 +77,8 @@ def main(args):
             if 'latest' in model:
                 best_model = model
                 break
+        if not best_model:
+            best_model = models[0]
         best_model = os.path.join(ckpt_folder, best_model) 
 
     best_checkpoint = L.pytorch.callbacks.ModelCheckpoint(monitor='val_loss', mode='min', save_top_k=1, dirpath='models', filename='empsn-{epoch}-{val_loss:.2f}')
