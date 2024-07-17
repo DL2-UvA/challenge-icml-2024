@@ -1,4 +1,5 @@
 import argparse
+import os
 import torch
 import wandb
 import copy
@@ -65,12 +66,24 @@ def main(args):
     print('Almost at training...')
 
     wandb_logger = WandbLogger()
+    ckpt_folder = 'models/'
+
+    if not os.path.exists(ckpt_folder):
+        os.makedirs(ckpt_folder)
+    models = os.listdir(ckpt_folder)
+    best_model = None
+    if len(models):
+        best_model = os.path.join(ckpt_folder, best_model) 
+
+    best_checkpoint = L.callbacks.ModelCheckpoint(monitor='val_loss', mode='min', save_top_k=1, filename='models/empsn-{epoch}-{val_loss:.2f}')
 
     empsn = LitEMPSN(model, train_samples=len(qm9_datamodule.train_dataloader().dataset),
                       validation_samples=len(qm9_datamodule.val_dataloader().dataset),
                       test_samples=len(qm9_datamodule.test_dataloader().dataset),
                        mae=mad, mad=mad, mean=mean, lr=args.lr, weight_decay=args.weight_decay)
-    trainer = L.Trainer(deterministic=True, max_epochs=args.epochs,
+    if best_model:
+        empsn.load_from_checkpoint(best_model)
+    trainer = L.Trainer(callbacks=[best_checkpoint],deterministic=True, max_epochs=args.epochs,
                         gradient_clip_val=args.gradient_clip, enable_checkpointing=False,
                         accelerator=args.device, devices=1, logger=wandb_logger)# accelerator='gpu', devices=1)
 
