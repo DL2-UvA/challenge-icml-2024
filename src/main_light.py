@@ -88,9 +88,6 @@ def main(args):
                       validation_samples=len(qm9_datamodule.val_dataloader().dataset),
                       test_samples=len(qm9_datamodule.test_dataloader().dataset),
                        mae=mad, mad=mad, mean=mean, lr=args.lr, weight_decay=args.weight_decay)
-    if best_model:
-        empsn = LitEMPSN.load_from_checkpoint(best_model)
-
     trainer = L.Trainer(callbacks=[best_checkpoint, latest_checkpoint],deterministic=True, max_epochs=args.epochs,
                         gradient_clip_val=args.gradient_clip, enable_checkpointing=True,
                         accelerator=args.device, devices=1, logger=wandb_logger)# accelerator='gpu', devices=1)
@@ -101,7 +98,7 @@ def main(args):
     #tuner = L.pytorch.tuner.Tuner(trainer)
     #tuner.scale_batch_size(empsn, mode='binsearch', datamodule=qm9_datamodule)
 
-    trainer.fit(empsn, datamodule=qm9_datamodule)
+    trainer.fit(empsn, datamodule=qm9_datamodule, ckpt_path=best_model)
     trainer.test(empsn, datamodule=qm9_datamodule)
 
 if __name__ == "__main__":
