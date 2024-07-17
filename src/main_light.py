@@ -89,7 +89,7 @@ def main(args):
                       test_samples=len(qm9_datamodule.test_dataloader().dataset),
                        mae=mad, mad=mad, mean=mean, lr=args.lr, weight_decay=args.weight_decay)
     if best_model:
-        empsn.load_from_checkpoint(best_model)
+        empsn = LitEMPSN.load_from_checkpoint(best_model)
 
     trainer = L.Trainer(callbacks=[best_checkpoint, latest_checkpoint],deterministic=True, max_epochs=args.epochs,
                         gradient_clip_val=args.gradient_clip, enable_checkpointing=True,
