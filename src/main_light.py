@@ -88,6 +88,11 @@ def main(args):
                       validation_samples=len(qm9_datamodule.val_dataloader().dataset),
                       test_samples=len(qm9_datamodule.test_dataloader().dataset),
                        mae=mad, mad=mad, mean=mean, lr=args.lr, weight_decay=args.weight_decay)
+    state_dict = torch.load(best_model)
+    print(model.state_dict().keys())
+    print(empsn.state_dict().keys())
+    print(state_dict.keys())
+    empsn.load_state_dict(state_dict['state_dict'])
     trainer = L.Trainer(callbacks=[best_checkpoint, latest_checkpoint],deterministic=True, max_epochs=args.epochs,
                         gradient_clip_val=args.gradient_clip, enable_checkpointing=True,
                         accelerator=args.device, devices=1, logger=wandb_logger)# accelerator='gpu', devices=1)

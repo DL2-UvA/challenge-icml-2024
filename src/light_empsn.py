@@ -3,8 +3,25 @@ import time
 from torch import optim, nn, utils, Tensor
 import torch
 import lightning as L
+from typing import Dict, Any
 
 class LitEMPSN(L.LightningModule):
+    def on_load_checkpoint(self, checkpoint: Dict[str, Any]):
+        """
+        The pt_model is trained separately, so we already have access to its
+        checkpoint and load it separately with `self.set_pt_model`.
+        
+        However, the PL Trainer is strict about
+        checkpoint loading (not configurable), so it expects the loaded state_dict
+        to match exactly the keys in the model state_dict.
+        
+        So, when loading the checkpoint, before matching keys, we add all pt_model keys
+        from self.state_dict() to the checkpoint state dict, so that they match
+        """
+        for key in self.state_dict().keys():
+            if key.startswith("pt_model"):
+                checkpoint["state_dict"][key] = self.state_dict()[key]
+
     def __init__(self, model, mae, mad, mean, train_samples, test_samples, validation_samples, lr=1e-3, weight_decay=1e-5):
         super().__init__()
         self.save_hyperparameters()
