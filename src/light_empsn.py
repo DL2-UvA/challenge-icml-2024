@@ -7,6 +7,7 @@ import lightning as L
 class LitEMPSN(L.LightningModule):
     def __init__(self, model, mae, mad, mean, train_samples, test_samples, validation_samples, lr=1e-3, weight_decay=1e-5):
         super().__init__()
+        self.save_hyperparameters()
         self.model = model
         self.weight_decay = weight_decay
         self.lr = lr
