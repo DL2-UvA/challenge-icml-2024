@@ -75,7 +75,8 @@ def main(args):
     if len(models):
         best_model = os.path.join(ckpt_folder, best_model) 
 
-    best_checkpoint = L.callbacks.ModelCheckpoint(monitor='val_loss', mode='min', save_top_k=1, filename='models/empsn-{epoch}-{val_loss:.2f}')
+    best_checkpoint = L.callbacks.ModelCheckpoint(monitor='val_loss', mode='min', save_top_k=1, dir_path='models', filename='empsn-{epoch}-{val_loss:.2f}')
+    latest_checkpoint = L.callbacks.ModelCheckpoint(monitor='epoch', mode='max', save_top_k=1, filename='latest-{epoch}-{step}', every_n_epochs=20)
 
     empsn = LitEMPSN(model, train_samples=len(qm9_datamodule.train_dataloader().dataset),
                       validation_samples=len(qm9_datamodule.val_dataloader().dataset),
@@ -83,7 +84,8 @@ def main(args):
                        mae=mad, mad=mad, mean=mean, lr=args.lr, weight_decay=args.weight_decay)
     if best_model:
         empsn.load_from_checkpoint(best_model)
-    trainer = L.Trainer(callbacks=[best_checkpoint],deterministic=True, max_epochs=args.epochs,
+
+    trainer = L.Trainer(callbacks=[best_checkpoint, latest_checkpoint],deterministic=True, max_epochs=args.epochs,
                         gradient_clip_val=args.gradient_clip, enable_checkpointing=False,
                         accelerator=args.device, devices=1, logger=wandb_logger)# accelerator='gpu', devices=1)
 
