@@ -73,9 +73,9 @@ def main(args):
     models = os.listdir(ckpt_folder)
     best_model = None
     if len(models):
-        for model in models:
-            if 'latest' in model:
-                best_model = model
+        for _model in models:
+            if 'latest' in _model:
+                best_model = _model
                 break
         if not best_model:
             best_model = models[0]
