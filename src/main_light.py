@@ -54,7 +54,7 @@ def main(args):
     start_lift_time = time.perf_counter()
     qm9_datamodule = QM9DataModule(args, batch_size=args.batch_size)
     # TODO: FIX could be better way to have calc_mean_mad inside LitEMPSN
-    qm9_datamodule.prepare_data()
+    #qm9_datamodule.prepare_data()
     qm9_datamodule.setup(stage='fit')
 
     end_lift_time = time.perf_counter()
