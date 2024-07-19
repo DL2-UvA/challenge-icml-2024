@@ -82,7 +82,6 @@ def main(args):
                 if curr_epoch > best_epoch:
                     best_epoch = curr_epoch
                     best_model = _model
-                    break
         if not best_model:
             best_model = models[0]
         best_model = os.path.join(ckpt_folder, best_model) 
