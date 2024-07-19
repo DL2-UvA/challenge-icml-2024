@@ -78,7 +78,7 @@ def main(args):
         best_epoch = -1
         for _model in models:
             if 'latest' in _model:
-                curr_epoch = int(_model.split('-')[1])
+                curr_epoch = int(_model.split('-')[1].split('=')[1])
                 if curr_epoch > best_epoch:
                     best_epoch = curr_epoch
                     best_model = _model
