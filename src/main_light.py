@@ -75,10 +75,14 @@ def main(args):
     models = os.listdir(ckpt_folder)
     best_model = None
     if len(models):
+        best_epoch = -1
         for _model in models:
             if 'latest' in _model:
-                best_model = _model
-                break
+                curr_epoch = int(_model.split('-')[1])
+                if curr_epoch > best_epoch:
+                    best_epoch = curr_epoch
+                    best_model = _model
+                    break
         if not best_model:
             best_model = models[0]
         best_model = os.path.join(ckpt_folder, best_model) 
