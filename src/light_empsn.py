@@ -76,7 +76,7 @@ class LitEMPSN(L.LightningModule):
     def on_train_epoch_end(self):
         all_preds = torch.stack(self.training_step_outputs).sum()
         self.log("train_mae", all_preds / self.train_samples)
-        self.log("epoch_time", time.perf_counter() - self.start_epoch_time)
+        #self.log("epoch_time", time.perf_counter() - self.start_epoch_time)
         self.training_step_outputs.clear()
 
 
