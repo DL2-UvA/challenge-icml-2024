@@ -6,9 +6,9 @@ from tqdm import tqdm
 
 from modules.models.simplicial.empsn import EMPSN
 
-from data_utils import generate_loaders_qm9, calc_mean_mad
+from src.data_utils import generate_loaders_qm9, calc_mean_mad
 import time
-from utils import set_seed
+from src.utils import set_seed
 
 
 def main(args):
@@ -36,7 +36,7 @@ def main(args):
         ).to(args.device)
 
     # Setup wandb
-    wandb.init(project=f"QM9-{args.target_name}-{args.lift_type}-{'preproc' if args.pre_proc else 'no-preproc'}")
+    wandb.init(project=f"TEST-QM9-{args.target_name}-{args.lift_type}-{'preproc' if args.pre_proc else 'no-preproc'}")
     wandb.config.update(vars(args))
     num_params = sum(p.numel() for p in model.parameters() if p.requires_grad)
     print(f'Number of parameters: {num_params}')
@@ -46,7 +46,7 @@ def main(args):
     train_loader, val_loader, test_loader = generate_loaders_qm9(args)
     end_lift_time = time.process_time()
     wandb.log({
-        'Lift time': end_lift_time - start_lift_time
+        'Data load time': end_lift_time - start_lift_time
     })
 
     mean, mad = calc_mean_mad(train_loader)
@@ -60,9 +60,11 @@ def main(args):
     scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(optimizer, args.epochs)
     best_train_mae, best_val_mae, best_model = float('inf'), float('inf'), None
 
+
     for _ in tqdm(range(args.epochs)):
         epoch_mae_train, epoch_mae_val = 0, 0
 
+        start_epoch_time = time.process_time()
         model.train()
         for _, batch in enumerate(train_loader):
             optimizer.zero_grad()
@@ -77,6 +79,10 @@ def main(args):
 
             optimizer.step()
             epoch_mae_train += mae.item()
+        end_epoch_time = time.process_time()
+        wandb.log({
+            'Epoch time': end_epoch_time - start_epoch_time
+        })
 
         model.eval()
         for _, batch in enumerate(val_loader):

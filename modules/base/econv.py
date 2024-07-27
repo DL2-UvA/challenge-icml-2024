@@ -49,7 +49,7 @@ class EConv(MessagePassing):
         aggr_norm: bool = False,
         update_func: Literal["relu", "sigmoid", "silu", None] = None,
         att: bool = False,
-        initialization: Literal["xavier_uniform", "xavier_normal"] = "xavier_uniform",
+        initialization: Literal["xavier_uniform", "xavier_normal", "uniform"] = "uniform",
         initialization_gain: float = 1.414,
         with_linear_transform_1: bool = True,
         with_linear_transform_2: bool = True,
@@ -121,12 +121,18 @@ class EConv(MessagePassing):
                 if self.weight_1 is not None:
                     stdv = 1.0 / math.sqrt(self.weight_1.size(1))
                     self.weight_1.data.uniform_(-stdv, stdv)
+                    if self.biases_1 is not None:
+                        self.biases_1.data.uniform_(-stdv, stdv)
                 if self.weight_2 is not None:
                     stdv = 1.0 / math.sqrt(self.weight_2.size(1))
-                    self.weight_1.data.uniform_(-stdv, stdv)
-                if self.weight_2 is not None:
+                    self.weight_2.data.uniform_(-stdv, stdv)
+                    if self.biases_2 is not None:
+                        self.biases_2.data.uniform_(-stdv, stdv)
+                if self.weight_3 is not None:
                     stdv = 1.0 / math.sqrt(self.weight_3.size(1))
-                    self.weight_1.data.uniform_(-stdv, stdv)
+                    self.weight_3.data.uniform_(-stdv, stdv)
+                    if self.biases_3 is not None:
+                        self.biases_3.data.uniform_(-stdv, stdv)
                 if self.att:
                     stdv = 1.0 / math.sqrt(self.att_weight.size(1))
                     self.att_weight.data.uniform_(-stdv, stdv)

@@ -26,6 +26,7 @@ class EMPSNLayer(torch.nn.Module):
             {
                 f"rank_{rank}": 
                     EConv(
+                        initialization="uniform",
                         in_channels=channels,
                         weight_channels=n_inv[f"rank_{rank}"][f"rank_{rank}"], #from r-cell to r-cell
                         out_channels=1,
@@ -44,6 +45,7 @@ class EMPSNLayer(torch.nn.Module):
             {
                 f"rank_{rank}": 
                     EConv(
+                        initialization="uniform",
                         in_channels=channels,
                         weight_channels=n_inv[f"rank_{rank-1}"][f"rank_{rank}"], #from r-1-cell to r-cell
                         out_channels=1,

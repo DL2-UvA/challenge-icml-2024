@@ -1,18 +1,22 @@
 import argparse
+import os
 import torch
 import wandb
 import copy
 from tqdm import tqdm
 import lightning as L
+from lightning.pytorch.callbacks import LearningRateFinder
 from lightning.pytorch.loggers import WandbLogger
+from lightning.pytorch import seed_everything
+import time
 
 
 from modules.models.simplicial.empsn import EMPSN
-from light_empsn import LitEMPSN
+from src.light_empsn import LitEMPSN
+from src.lit_datamodule import QM9DataModule
 
-from data_utils import generate_loaders_qm9, calc_mean_mad
-import time
-from utils import set_seed
+from src.data_utils import generate_loaders_qm9, calc_mean_mad
+from src.utils import set_seed
 
 num_input = 15
 num_out = 1
@@ -45,25 +49,64 @@ def main(args):
     num_params = sum(p.numel() for p in model.parameters() if p.requires_grad)
     print(f'Number of parameters: {num_params}')
 
+    seed_everything(args.seed)
     # # Get loaders
-    start_lift_time = time.process_time()
-    train_loader, val_loader, test_loader = generate_loaders_qm9(args)
-    end_lift_time = time.process_time()
+    start_lift_time = time.perf_counter()
+    qm9_datamodule = QM9DataModule(args, batch_size=args.batch_size)
+    # TODO: FIX could be better way to have calc_mean_mad inside LitEMPSN
+    #qm9_datamodule.prepare_data()
+    qm9_datamodule.setup(stage='fit')
+
+    end_lift_time = time.perf_counter()
     wandb.log({
         'Lift time': end_lift_time - start_lift_time
     })
 
-    mean, mad = calc_mean_mad(train_loader)
+    mean, mad = calc_mean_mad(qm9_datamodule.train_dataloader())
     mean, mad = mean.to(args.device), mad.to(args.device)
 
     print('Almost at training...')
 
     wandb_logger = WandbLogger()
+    ckpt_folder = 'models/'
 
-    empsn = LitEMPSN(model, mae=mad, mad=mad, mean=mean, lr=args.lr, weight_decay=args.weight_decay)
-    trainer = L.Trainer(max_epochs=args.epochs, gradient_clip_val=args.gradient_clip, enable_checkpointing=False, accelerator=args.device, devices=1, logger=wandb_logger)# accelerator='gpu', devices=1)
-    trainer.fit(empsn, train_dataloaders=train_loader, val_dataloaders=val_loader)
-    trainer.test(empsn, dataloaders=test_loader)
+    if not os.path.exists(ckpt_folder):
+        os.makedirs(ckpt_folder)
+    models = os.listdir(ckpt_folder)
+    best_model = None
+    if len(models):
+        best_epoch = -1
+        for _model in models:
+            if 'latest' in _model:
+                curr_epoch = int(_model.split('-')[1].split('=')[1])
+                if curr_epoch > best_epoch:
+                    best_epoch = curr_epoch
+                    best_model = _model
+        if not best_model:
+            best_model = models[0]
+        best_model = os.path.join(ckpt_folder, best_model) 
+
+    best_checkpoint = L.pytorch.callbacks.ModelCheckpoint(monitor='val_loss', mode='min', save_top_k=1, dirpath='models', filename='empsn-{epoch}-{val_loss:.2f}')
+    latest_checkpoint = L.pytorch.callbacks.ModelCheckpoint(monitor='epoch', mode='max', save_top_k=1, dirpath='models', filename='latest-{epoch}-{step}', every_n_epochs=20)
+
+    empsn = LitEMPSN(model, train_samples=len(qm9_datamodule.train_dataloader().dataset),
+                      validation_samples=len(qm9_datamodule.val_dataloader().dataset),
+                      test_samples=len(qm9_datamodule.test_dataloader().dataset),
+                       mae=mad, mad=mad, mean=mean, lr=args.lr, weight_decay=args.weight_decay)
+    # state_dict = torch.load(best_model)
+    # empsn.load_state_dict(state_dict['state_dict'])
+    trainer = L.Trainer(callbacks=[best_checkpoint, latest_checkpoint],deterministic=True, max_epochs=args.epochs,
+                        gradient_clip_val=args.gradient_clip, enable_checkpointing=True,
+                        accelerator=args.device, devices=1, logger=wandb_logger)# accelerator='gpu', devices=1)
+
+    #trainer.tune(model)
+
+
+    #tuner = L.pytorch.tuner.Tuner(trainer)
+    #tuner.scale_batch_size(empsn, mode='binsearch', datamodule=qm9_datamodule)
+
+    trainer.fit(empsn, datamodule=qm9_datamodule, ckpt_path=best_model)
+    trainer.test(empsn, datamodule=qm9_datamodule)
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
@@ -77,6 +120,8 @@ if __name__ == "__main__":
                         help='num workers')
     parser.add_argument('--debug', action='store_true',
                         help='debug mode')
+    parser.add_argument('--benchmark', action='store_true',
+                        help='benchmark mode')
 
     # Model parameters
     parser.add_argument('--model_name', type=str, default='empsn',
@@ -111,6 +156,7 @@ if __name__ == "__main__":
                         help='random seed')
     parser.add_argument('--pre_proc', action='store_true',
                         help='preprocessing')
+
 
 
     parsed_args = parser.parse_args()

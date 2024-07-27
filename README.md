@@ -27,16 +27,19 @@ To setup from a clean environment we will reproduce the steps as mentioned in th
     ```
 ## Experiments
 
-There are two important directions the experiments follow: execution efficiency, performance of the network.
-First, we will evaluate the efficiency of the lifting procedure for different complexes (Alpha Complex, Vietoris-Rips), the efficiency of pre-computing the invariance relationships prior to the forward pass and the actual
+There are two important directions the experiments follow: execution efficiency, performance of the network. We evaluate the performance of the forward pass and lifting procedure.
 performance in the QM9 dataset.
 
-To execute an experiment activate the `topox` environment created above and go into `src`. The file `main.py` will
-run the experiment, some optional paramters are explained below.
+To execute an experiment activate the `topox` environment created above and go into `src`.
+
+The file `main.py` can be used to run the experiment, however `main_light.py` is an implementation using Pytorch Lighting that achieves better times some optional paramters are explained below.
 
 + `--lift_type <lift>`: the type of lifting procedure `alpha` or `rips`
-+ `--batch_size <size>` the size of each batch
++ `--batch_size <size>`: the size of each batch
++ `--dim <int>`: The maximum dimension of the complex
++ `--dis <float>`: The delta parameter in the VR Filtration (diameter of the growing ball)
 + `--target_name <name>`: the target molecular property to train/predict for
 + `--debug `: to run a smaller subset of the dataset for testing purpouses
 + `--pre_proc`: wether the invariances should be precomputed during the lift procedure or not (beware it's vary time consuming)
++ `--benchmark`: Runs the process using benchmarking distincts so that it logs to WandDB
 
